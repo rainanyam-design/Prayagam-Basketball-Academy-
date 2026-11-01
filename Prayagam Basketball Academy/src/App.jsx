@@ -231,3 +231,4 @@ function GalleryManager({records,isCoach,addRow,deleteRow,uploadFile}) {
 }
 function UploadControl({label,accept,onUpload}){const [busy,setBusy]=useState(false);return <div className="upload-box"><Image/><div><b>{label}</b><label className="primary small upload-label">{busy?'Uploading…':'Choose file'}<input type="file" accept={accept} onChange={async e=>{if(!e.target.files?.[0])return;setBusy(true);try{await onUpload(e.target.files[0])}catch(err){alert(err.message)}finally{setBusy(false)}}}/></label></div></div>}
 window.__supabase = supabase;
+export default App;
