@@ -204,31 +204,308 @@ function SectionHeader({title,desc}){return <div className="section-header"><p>{
 function Metric({label,value}){return <div className="metric"><span>{label}</span><b>{value}</b></div>}
 function PlayerCard({player}){return <div className="panel own-card"><div className="avatar big">{player.name?.[0]}</div><div><span className="eyebrow">YOUR PLAYER PROFILE</span><h3>{player.name}</h3><p>{player.position||'Player'} · {player.height||'Height not added'} · #{player.jersey_number||'—'}</p></div></div>}
 function Field({label,name,value}){return <label>{label}<input name={name} defaultValue={value||''}/></label>}
-function PlayerManager({players,isCoach,addRow,deleteRow,uploadFile}) {
-  const [form,setForm]=useState(false);
-  return <><div className="toolbar"><span>{players.length} registered players</span>{isCoach&&<button className="primary small" onClick={()=>setForm(!form)}><Plus size={16}/> Add player</button>}</div>{form&&<form className="panel form-grid" onSubmit={e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.currentTarget));addRow('players',d);setForm(false)}}><Field label="Full name" name="name"/><Field label="Date of birth" name="dob"/><Field label="Height (e.g. 182 cm)" name="height"/><Field label="Position" name="position"/><Field label="Jersey number" name="jersey_number"/><Field label="Phone (optional)" name="phone"/><button className="primary">Save player</button></form>}<div className="player-grid">{players.map(p=><div className="player-tile" key={p.id}><div className="player-photo">{p.photo_url?<img src={p.photo_url}/>:<Users/>}</div><div><b>{p.name}</b><small>{p.position||'Player'} · {p.height||'Height —'}</small><small>DOB: {p.dob||'—'} · #{p.jersey_number||'—'}</small></div>{isCoach&&<button className="icon-btn" onClick={()=>deleteRow('players',p.id)}><X size={16}/></button>}</div>)}</div></>;
-}
-function AttendanceManager({players,records,isCoach,addRow,deleteRow,profile}) {
-  const [player,setPlayer]=useState(profile?.player_id||''); const [date,setDate]=useState(new Date().toISOString().slice(0,10)); const [status,setStatus]=useState('Present');
-  return <><div className="toolbar">{isCoach&&<form className="inline-form" onSubmit={e=>{e.preventDefault();addRow('attendance',{player_id:player,session_date:date,status})}}><select required value={player} onChange={e=>setPlayer(e.target.value)}><option value="">Select player</option>{players.map(p=><option value={p.id} key={p.id}>{p.name}</option>)}</select><input type="date" value={date} onChange={e=>setDate(e.target.value)}/><select value={status} onChange={e=>setStatus(e.target.value)}><option>Present</option><option>Absent</option><option>Late</option></select><button className="primary small">Mark attendance</button></form>}</div><div className="table-wrap"><table><thead><tr><th>Date</th><th>Player</th><th>Status</th>{isCoach&&<th></th>}</tr></thead><tbody>{records.map(r=><tr key={r.id}><td>{r.session_date}</td><td>{r.players?.name||players.find(p=>p.id===r.player_id)?.name||'Player'}</td><td><span className={`status ${r.status?.toLowerCase()}`}>{r.status}</span></td>{isCoach&&<td><button className="text-danger" onClick={()=>deleteRow('attendance',r.id)}>Delete</button></td>}</tr>)}</tbody></table></div></>;
-}
-function TournamentManager({records,isCoach,addRow,deleteRow}) {
-  const [open,setOpen]=useState(false);
-  return <>{isCoach&&<button className="primary small" onClick={()=>setOpen(!open)}><Plus size={16}/> Add tournament</button>}{open&&<form className="panel form-grid" onSubmit={e=>{e.preventDefault();addRow('tournaments',Object.fromEntries(new FormData(e.currentTarget)));setOpen(false)}}><Field label="Tournament name" name="name"/><Field label="Date" name="event_date"/><Field label="Venue" name="venue"/><Field label="Result / notes" name="result"/><button className="primary">Save tournament</button></form>}<div className="event-list">{records.map(r=><div className="event-card" key={r.id}><div className="event-date"><b>{r.event_date?new Date(r.event_date+'T00:00:00').getDate():'—'}</b><small>{r.event_date?new Date(r.event_date+'T00:00:00').toLocaleString('en',{month:'short'}):'DATE'}</small></div><div><h3>{r.name}</h3><p>{r.venue||'Venue to be announced'} · {r.result||'Details to be announced'}</p></div>{isCoach&&<button className="icon-btn" onClick={()=>deleteRow('tournaments',r.id)}><X/></button>}</div>)}</div></>;
-}
-function FeesManager({players,records,isCoach,addRow,deleteRow,profile}) {
-  const [player,setPlayer]=useState(profile?.player_id||''); const [month,setMonth]=useState(new Date().toISOString().slice(0,7));
-  return <>{isCoach&&<form className="inline-form panel" onSubmit={e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.currentTarget));addRow('fees',{...d,amount:Number(d.amount)})}}><select name="player_id" required value={player} onChange={e=>setPlayer(e.target.value)}><option value="">Select player</option>{players.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><input name="month" type="month" required value={month} onChange={e=>setMonth(e.target.value)}/><input name="amount" type="number" min="0" defaultValue="600" placeholder="Amount ₹" required/><select name="status"><option>Pending</option><option>Paid</option></select><button className="primary small">Add fee record</button></form>}<div className="table-wrap"><table><thead><tr><th>Month</th><th>Player</th><th>Amount</th><th>Status</th>{isCoach&&<th></th>}</tr></thead><tbody>{records.map(r=><tr key={r.id}><td>{r.month}</td><td>{r.players?.name||players.find(p=>p.id===r.player_id)?.name||'Player'}</td><td>₹{Number(r.amount).toLocaleString('en-IN')}</td><td><span className={`status ${r.status?.toLowerCase()}`}>{r.status}</span></td>{isCoach&&<td><button className="text-danger" onClick={()=>deleteRow('fees',r.id)}>Delete</button></td>}</tr>)}</tbody></table></div></>;
-}
-function SeniorManager({records,isCoach,addRow,deleteRow,uploadFile}) {
-  const [open,setOpen]=useState(false);
-  return <>{isCoach&&<button className="primary small" onClick={()=>setOpen(!open)}><Plus size={16}/> Honour a senior</button>}{open&&<form className="panel form-grid" onSubmit={e=>{e.preventDefault();addRow('seniors',Object.fromEntries(new FormData(e.currentTarget)));setOpen(false)}}><Field label="Player name" name="name"/><Field label="Years / batch" name="batch"/><Field label="Achievement / tribute" name="achievement"/><Field label="Photo URL (optional)" name="photo_url"/><button className="primary">Add to hall of fame</button></form>}<div className="senior-grid">{records.map(r=><div className="senior-card" key={r.id}>{r.photo_url?<img src={r.photo_url}/>:<div className="senior-placeholder"><Award/></div>}<div><span className="eyebrow">ACADEMY LEGACY</span><h3>{r.name}</h3><p>{r.batch||''}</p><p>{r.achievement||''}</p>{isCoach&&<button className="text-danger" onClick={()=>deleteRow('seniors',r.id)}>Remove</button>}</div></div>)}</div></>;
-}
-function GalleryManager({records,isCoach,addRow,deleteRow,uploadFile}) {
-  const [busy,setBusy]=useState(false);
-  async function upload(e){const file=e.target.files?.[0];if(!file)return;setBusy(true);try{const url=await uploadFile(file);await addRow('gallery',{title:file.name,media_url:url,media_type:file.type.startsWith('video')?'video':'image'});}catch(err){alert(err.message)}finally{setBusy(false)}}
-  return <>{isCoach&&<div className="upload-box"><Camera/><div><b>Upload academy moments</b><p>Images and videos are stored in your academy media bucket.</p><label className="primary small upload-label">{busy?'Uploading…':'Choose photo or video'}<input type="file" accept="image/*,video/*" onChange={upload} disabled={busy}/></label></div></div>}<div className="gallery-grid">{records.map(r=><div className="gallery-item" key={r.id}>{r.media_type==='video'?<video src={r.media_url} controls/>:<img src={r.media_url}/>}<div><span>{r.title}</span>{isCoach&&<button onClick={()=>deleteRow('gallery',r.id)} className="text-danger">Delete</button>}</div></div>)}</div></>;
-}
-function UploadControl({label,accept,onUpload}){const [busy,setBusy]=useState(false);return <div className="upload-box"><Image/><div><b>{label}</b><label className="primary small upload-label">{busy?'Uploading…':'Choose file'}<input type="file" accept={accept} onChange={async e=>{if(!e.target.files?.[0])return;setBusy(true);try{await onUpload(e.target.files[0])}catch(err){alert(err.message)}finally{setBusy(false)}}}/></label></div></div>}
-window.__supabase = supabase;
-export default App;
+function PlayerManager({ players, isCoach, addRow, deleteRow, uploadFile }) {
+  const [form, setForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const emptyForm = {
+    name: '',
+    dob: '',
+    height: '',
+    position: '',
+    jersey_number: '',
+    phone: '',
+    photo_url: ''
+  };
+
+  const [data, setData] = useState(emptyForm);
+
+  function updateField(e) {
+    setData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  }
+
+  function startAdd() {
+    setEditing(null);
+    setData(emptyForm);
+    setError('');
+    setForm(true);
+  }
+
+  function startEdit(player) {
+    setEditing(player);
+    setData({
+      name: player.name || '',
+      dob: player.dob || '',
+      height: player.height || '',
+      position: player.position || '',
+      jersey_number: player.jersey_number || '',
+      phone: player.phone || '',
+      photo_url: player.photo_url || ''
+    });
+    setError('');
+    setForm(true);
+  }
+
+  async function handlePhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Photo must be smaller than 5 MB.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+
+    try {
+      const url = await uploadFile(file);
+      setData(prev => ({ ...prev, photo_url: url }));
+    } catch (err) {
+      setError(err.message || 'Photo upload failed.');
+    } finally {
+      setBusy(false);
+      e.target.value = '';
+    }
+  }
+
+  async function savePlayer(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+
+    try {
+      const payload = {
+        ...data,
+        name: data.name.trim(),
+        dob: data.dob || null,
+        height: data.height.trim() || null,
+        position: data.position.trim() || null,
+        jersey_number: data.jersey_number.trim() || null,
+        phone: data.phone.trim() || null,
+        photo_url: data.photo_url || null
+      };
+
+      if (!payload.name) {
+        throw new Error('Player name is required.');
+      }
+
+      if (editing) {
+        const { error } = await window.__supabase
+          .from('players')
+          .update(payload)
+          .eq('id', editing.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await window.__supabase
+          .from('players')
+          .insert(payload);
+
+        if (error) throw error;
+      }
+
+      setForm(false);
+      setEditing(null);
+      setData(emptyForm);
+
+      await window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Could not save player.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="toolbar">
+        <span>{players.length} registered players</span>
+
+        {isCoach && (
+          <button className="primary small" onClick={startAdd}>
+            <Plus size={16} /> Add player
+          </button>
+        )}
+      </div>
+
+      {form && isCoach && (
+        <form className="panel form-grid" onSubmit={savePlayer}>
+          <h3 className="full">
+            {editing ? 'Edit player details' : 'Register a new player'}
+          </h3>
+
+          <label>
+            Full name
+            <input
+              name="name"
+              value={data.name}
+              onChange={updateField}
+              required
+            />
+          </label>
+
+          <label>
+            Date of birth
+            <input
+              name="dob"
+              type="date"
+              value={data.dob}
+              onChange={updateField}
+            />
+          </label>
+
+          <label>
+            Height
+            <input
+              name="height"
+              placeholder="e.g. 182 cm"
+              value={data.height}
+              onChange={updateField}
+            />
+          </label>
+
+          <label>
+            Position
+            <select
+              name="position"
+              value={data.position}
+              onChange={updateField}
+            >
+              <option value="">Select position</option>
+              <option value="Point Guard">Point Guard</option>
+              <option value="Shooting Guard">Shooting Guard</option>
+              <option value="Small Forward">Small Forward</option>
+              <option value="Power Forward">Power Forward</option>
+              <option value="Center">Center</option>
+              <option value="Guard">Guard</option>
+              <option value="Forward">Forward</option>
+            </select>
+          </label>
+
+          <label>
+            Jersey number
+            <input
+              name="jersey_number"
+              value={data.jersey_number}
+              onChange={updateField}
+            />
+          </label>
+
+          <label>
+            Phone number
+            <input
+              name="phone"
+              type="tel"
+              value={data.phone}
+              onChange={updateField}
+            />
+          </label>
+
+          <div className="full">
+            <label>
+              Player photo
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhoto}
+                disabled={busy}
+              />
+            </label>
+
+            {data.photo_url && (
+              <div style={{ marginTop: 12 }}>
+                <img
+                  src={data.photo_url}
+                  alt="Player preview"
+                  style={{
+                    width: 110,
+                    height: 110,
+                    objectFit: 'cover',
+                    borderRadius: 8
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {error && <p className="error full">{error}</p>}
+
+          <div className="full" style={{ display: 'flex', gap: 10 }}>
+            <button className="primary" disabled={busy}>
+              {busy
+                ? 'Saving...'
+                : editing
+                  ? 'Update player'
+                  : 'Save player'}
+            </button>
+
+            <button
+              type="button"
+              className="outline-btn"
+              onClick={() => setForm(false)}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="player-grid">
+        {players.map(player => (
+          <div className="player-tile" key={player.id}>
+            <div className="player-photo">
+              {player.photo_url ? (
+                <img src={player.photo_url} alt={player.name} />
+              ) : (
+                <Users />
+              )}
+            </div>
+
+            <div>
+              <b>{player.name}</b>
+              <small>
+                {player.position || 'Player'} · {player.height || 'Height —'}
+              </small>
+              <small>
+                DOB: {player.dob || '—'} · #{player.jersey_number || '—'}
+              </small>
+            </div>
+
+            {isCoach && (
+              <div style={{ display: 'flex', gap: 5 }}>
+                <button
+                  className="icon-btn"
+                  title="Edit player"
+                  onClick={() => startEdit(player)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  className="icon-btn"
+                  title="Delete player"
+                  onClick={() => deleteRow('players', player.id)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+      }
+          
